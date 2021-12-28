@@ -1,5 +1,6 @@
 import gym
 import torch
+import matplotlib.pyplot as plt
 
 from pytorch.Agent import Agent
 from pytorch.QNetwork import FCQ
@@ -15,12 +16,18 @@ if __name__ == "__main__":
 
     args = {
         "env_fn": lambda : gym.make("CartPole-v1"),
-        "Qnet": lambda : FCQ(**net_args),
+        "Qnet": FCQ,
         "buffer": ReplayBuffer,
 
         "epsilon": 0.1,
-        "target_update_rate": 0.1
+        "gamma": 1,
+        "target_update_rate": 15,
+        "min_buffer": 64
     }
 
-    
     agent = Agent(**args)
+    rewards, evals = agent.train(300)
+
+    plt.plot(rewards)
+    plt.plot(evals)
+    plt.show()
