@@ -8,6 +8,7 @@ class Agent():
                  target_update_rate, min_buffer) -> None:
         
         self.env = env_fn()
+        self.env_test = env_fn()
         self.n_actions = self.env.action_space.n
         self.state_shape = self.env.observation_space.shape
 
@@ -21,46 +22,70 @@ class Agent():
         self.gamma = gamma
         self.target_update_rate = target_update_rate
 
+        self.step_count = 0
+        self.episode_count = 1
+        self.state = self.env.reset()
+        self.rewards = []
 
-    def step(self):
-        pass
-    
 
-    def train(self, n_episodes):
-        step_count = 0
-        rewards = np.zeros(n_episodes)
-        evals = np.zeros(n_episodes)
-        for i in tqdm(range(n_episodes)):
-            state = self.env.reset()
-            while True:
-                step_count += 1
-                action = self.epsilonGreedyPolicy(state)
-                state_p, reward, done, info = self.env.step(action)
-                rewards[i] += reward
+    def step(self, steps):
+        for _ in range(steps):
+            self.step_count += 1
 
-                is_truncated = 'TimeLimit.truncated' in info and info['TimeLimit.truncated']
-                is_failure = done and not is_truncated
-                self.buffer.store(state, action, reward, state_p, float(is_failure))
+            action = self.epsilonGreedyPolicy(self.state)
+            state_p, reward, done, info = self.env.step(action)
+            
+            is_truncated = 'TimeLimit.truncated' in info and info['TimeLimit.truncated']
+            is_failure = done and not is_truncated
+            self.buffer.store(self.state, action, reward, state_p, float(is_failure))
 
-                if len(self.buffer) >= self.min_buffer:
-                    self.update()
+            if len(self.buffer) >= self.min_buffer:
+                self.update()
 
-                if step_count % self.target_update_rate == 0:
-                    self.update_target_network()
+            if self.step_count % self.target_update_rate == 0:
+                self.update_target_network()
 
-                if done:
-                    break
-                state = state_p
-            evals[i] = self.evaluate()
-        return rewards, evals
+            self.state = state_p
+            if done:
+                self.episode_count += 1
+                self.state = self.env.reset()
+
+
+    # def train(self, n_episodes):
+    #     step_count = 0
+    #     rewards = np.zeros(n_episodes)
+    #     evals = np.zeros(n_episodes)
+    #     for i in tqdm(range(n_episodes)):
+    #         state = self.env.reset()
+    #         while True:
+    #             step_count += 1
+    #             action = self.epsilonGreedyPolicy(state)
+    #             state_p, reward, done, info = self.env.step(action)
+    #             rewards[i] += reward
+
+    #             is_truncated = 'TimeLimit.truncated' in info and info['TimeLimit.truncated']
+    #             is_failure = done and not is_truncated
+    #             self.buffer.store(state, action, reward, state_p, float(is_failure))
+
+    #             if len(self.buffer) >= self.min_buffer:
+    #                 self.update()
+
+    #             if step_count % self.target_update_rate == 0:
+    #                 self.update_target_network()
+
+    #             if done:
+    #                 break
+    #             state = state_p
+    #         evals[i] = self.evaluate()
+    #     return rewards, evals
 
 
     def evaluate(self):
         rewards = 0
-        state = self.env.reset()
+        state = self.env_test.reset()
         while True:
             action = self.greedyPolicy(state)
-            state_p, reward, done, _ = self.env.step(action)
+            state_p, reward, done, _ = self.env_test.step(action)
             rewards += reward
             if done:
                 break
@@ -73,7 +98,6 @@ class Agent():
         actions = torch.tensor(actions)
         is_terminals = torch.tensor(is_terminals)
         rewards = torch.tensor(rewards)
-
         q_states = self.online_net(states).gather(1, actions).squeeze()
         with torch.no_grad():
             q_states_p = self.target_net(states_p)
@@ -83,7 +107,7 @@ class Agent():
         loss = td_error.pow(2).mean()
 
         self.online_net.optimize(loss)
-        
+
 
     def update_target_network(self):
         self.target_net.load_state_dict(self.online_net.state_dict())
@@ -99,7 +123,7 @@ class Agent():
     
     def greedyPolicy(self, state):
         with torch.no_grad():
-            action = self.online_net(state).argmax()
+            action = self.target_net(state).argmax()
         return action.item()
 
     
