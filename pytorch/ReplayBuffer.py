@@ -9,7 +9,7 @@ class ReplayBuffer:
         self.batch_size = batch_size
 
         self.states = np.empty(shape=(max_size, *state_shape))
-        self.actions = np.empty(shape=(max_size, 1), dtype=np.int)
+        self.actions = np.empty(shape=(max_size, 1), dtype=np.int64)
         self.rewards = np.empty(shape=(max_size))
         self.states_p = np.empty(shape=(max_size, *state_shape))
         self.is_terminals = np.empty(shape=(max_size), dtype=np.float)
