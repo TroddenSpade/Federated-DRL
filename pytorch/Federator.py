@@ -1,7 +1,7 @@
 import numpy as np
 from tqdm import tqdm
 
-from pytorch.Agent import Agent
+from pytorch.DQN import Agent
 from pytorch.QNetwork import FCQ
 from pytorch.ReplayBuffer import ReplayBuffer
 
@@ -27,16 +27,17 @@ class Federator:
     def train(self, n_runs):
         rewards = np.zeros(n_runs)
         for r in tqdm(range(n_runs)):
+            scores = []
             for agent in self.agents:
                 agent.step(self.update_rate)
-            self.aggregate_networks()
+                scores.append(agent.get_score())
+            self.aggregate_networks(scores)
             self.set_local_networks()
             rewards[r] = self.global_agent.evaluate()
-        print(self.agents[0].episode_count)
         return rewards
 
 
-    def aggregate_networks(self):
+    def aggregate_networks(self, scores):
         sd_online = self.global_agent.online_net.state_dict()
         sd_target = self.global_agent.target_net.state_dict()
 
@@ -48,15 +49,15 @@ class Federator:
 
         for key in sd_online:
             sd_online[key] -= sd_online[key]
-            for dict in online_dicts:
-                sd_online[key] += dict[key]
-            sd_online[key] /= self.n_agents
+            for i, dict in enumerate(online_dicts):
+                sd_online[key] += scores[i] * dict[key]
+            sd_online[key] /= sum(scores)
 
         for key in sd_target:
             sd_target[key] -= sd_target[key]
-            for dict in target_dicts:
-                sd_target[key] += dict[key]
-            sd_target[key] /= self.n_agents
+            for i, dict in enumerate(target_dicts):
+                sd_target[key] += scores[i] * dict[key]
+            sd_target[key] /= sum(scores)
 
 
     def set_local_networks(self):
