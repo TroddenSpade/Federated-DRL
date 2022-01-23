@@ -23,6 +23,10 @@ class Federator:
 
         self.set_local_networks()
 
+
+    def print_episode_lengths(self):
+        for a in self.agents:
+            print(a.episode_count)
             
     def train(self, n_runs):
         rewards = np.zeros(n_runs)
@@ -58,6 +62,9 @@ class Federator:
             for i, dict in enumerate(target_dicts):
                 sd_target[key] += scores[i] * dict[key]
             sd_target[key] /= sum(scores)
+
+        self.global_agent.online_net.load_state_dict(sd_online)
+        self.global_agent.target_net.load_state_dict(sd_target)
 
 
     def set_local_networks(self):
