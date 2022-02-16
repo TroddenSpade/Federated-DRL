@@ -27,7 +27,6 @@ class Agent():
         self.target_update_rate = target_update_rate
 
         self.step_count = 0
-        self.last_reward = 0
         self.episode_reward = 0
         self.episode_count = 1
         self.state = self.env.reset()
@@ -55,44 +54,40 @@ class Agent():
             if done:
                 self.episode_count += 1
                 self.state = self.env.reset()
-                self.last_reward = self.episode_reward
+                self.rewards.append(self.episode_reward)
                 self.episode_reward = 0
 
 
-    def train(self, n_runs):
-        pass
+    def train(self, n_episodes):
+        for _ in range(n_episodes):
+            self.episode_reward = 0
+            self.state = self.env.reset()
 
-    # def train(self, n_episodes):
-    #     step_count = 0
-    #     rewards = np.zeros(n_episodes)
-    #     evals = np.zeros(n_episodes)
-    #     for i in tqdm(range(n_episodes)):
-    #         state = self.env.reset()
-    #         while True:
-    #             step_count += 1
-    #             action = self.epsilonGreedyPolicy(state)
-    #             state_p, reward, done, info = self.env.step(action)
-    #             rewards[i] += reward
+            while True:
+                self.step_count += 1
+                action = self.epsilonGreedyPolicy(self.state)
+                state_p, reward, done, info = self.env.step(action)
+                self.episode_reward += reward
 
-    #             is_truncated = 'TimeLimit.truncated' in info and info['TimeLimit.truncated']
-    #             is_failure = done and not is_truncated
-    #             self.buffer.store(state, action, reward, state_p, float(is_failure))
+                is_truncated = 'TimeLimit.truncated' in info and info['TimeLimit.truncated']
+                is_failure = done and not is_truncated
+                self.buffer.store(self.state, action, reward, state_p, float(is_failure))
 
-    #             if len(self.buffer) >= self.min_buffer:
-    #                 self.update()
+                if len(self.buffer) >= self.min_buffer:
+                    self.update()
+                    if self.step_count % self.target_update_rate == 0:
+                        self.update_target_network()
 
-    #             if step_count % self.target_update_rate == 0:
-    #                 self.update_target_network()
-
-    #             if done:
-    #                 break
-    #             state = state_p
-    #         evals[i] = self.evaluate()
-    #     return rewards, evals
+                self.state = state_p
+                if done:
+                    print(self.episode_reward)
+                    self.episode_count += 1
+                    self.rewards.append(self.episode_reward)
+                    break
 
 
     def get_score(self):
-        return self.last_reward
+        return np.mean(self.rewards[-5:])
 
 
     def evaluate(self):
@@ -147,5 +142,3 @@ class Agent():
         with torch.no_grad():
             action = self.target_net(state).argmax()
         return action.item()
-
-    
