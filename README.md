@@ -1,5 +1,5 @@
 # Parallel Deep Reinforcement Learning with Federated Learning Framework
-The purpose of this project is to assess the effect of parallel training of multiple Deep Reinforcement Learning agents using the Federated Averaging (FedAVG) algorithm -- in other words, after training the agents for a specific timesteps, all of the Deep Q Network models are aggregated by taking average of their parameters and subsequently the averaged model will be set for all of the agents for more training rounds.
+The purpose of this project is to assess the effect of parallel training of multiple Deep Reinforcement Learning agents using the Federated Averaging (FedAVG) algorithm -- after training the agents for specific timesteps, all of the Deep Q Network models are aggregated by taking the average of their parameters and subsequently the averaged model will be set for all of the agents for more training rounds.
 
 ### Environments
 * CartPole
