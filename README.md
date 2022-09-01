@@ -11,11 +11,11 @@ The purpose of this project is to assess the effect of parallel training of mult
 * Double Deep Q Network
 
 ## Experiments
-### 3 DQN Agents on Cartpole Environemt
+### 3 DQN Agents on Cartpole Environment
 ![CP1](https://github.com/TroddenSpade/Federated-DQN/blob/main/results/CartPole/1/CartPole.png?raw=true)
 ![CP2](https://github.com/TroddenSpade/Federated-DQN/blob/main/results/CartPole/2/Figure_2.png?raw=true)
 
-### 3 DQN Agents on Lunar Lander Environemt
+### 3 DQN Agents on Lunar Lander Environment
 ![LL](https://github.com/TroddenSpade/Federated-DQN/blob/main/results/LunarLander/lunarlander.png?raw=true)
 
 ### 4 DDQN Agents on Super Mario Bros 1-1 to 1-4
